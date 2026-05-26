@@ -508,10 +508,21 @@ async function initDb() {
 // ── START ─────────────────────────────────────────────────────
 async function start() {
   try {
+    if (!process.env.DATABASE_URL) {
+      console.error('❌ DATABASE_URL environment variable is not set!');
+      console.error('   On Railway: Add PostgreSQL database to your project,');
+      console.error('   then link it to this service. DATABASE_URL is set automatically.');
+      process.exit(1);
+    }
+    console.log('🔌 Connecting to PostgreSQL...');
     await initDb();
-    app.listen(PORT, () => console.log(`✅ WMS Pro running on port ${PORT}`));
+    app.listen(PORT, () => {
+      console.log(`✅ WMS Pro running on port ${PORT}`);
+      console.log(`✅ PostgreSQL connected successfully`);
+    });
   } catch(e) {
     console.error('❌ Failed to start:', e.message);
+    console.error('   Full error:', e.stack);
     process.exit(1);
   }
 }
