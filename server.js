@@ -11,9 +11,14 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'wms-secret-2024';
 
 // PostgreSQL connection
+// Supports both Railway internal and public URLs
+const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRESQL_URL || '';
+console.log('DB URL starts with:', dbUrl.substring(0, 30) + '...');
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+  connectionString: dbUrl,
+  ssl: { rejectUnauthorized: false },
+  connectionTimeoutMillis: 10000,
 });
 
 app.use(cors());
@@ -508,12 +513,14 @@ async function initDb() {
 // ── START ─────────────────────────────────────────────────────
 async function start() {
   try {
-    if (!process.env.DATABASE_URL) {
-      console.error('❌ DATABASE_URL environment variable is not set!');
-      console.error('   On Railway: Add PostgreSQL database to your project,');
-      console.error('   then link it to this service. DATABASE_URL is set automatically.');
+    const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRESQL_URL || '';
+    if (!dbUrl) {
+      console.error('❌ No database URL found!');
+      console.error('   Checked: DATABASE_URL, POSTGRES_URL, POSTGRESQL_URL');
+      console.error('   Available env vars:', Object.keys(process.env).filter(k => k.includes('POST') || k.includes('DATA') || k.includes('PG')));
       process.exit(1);
     }
+    console.log('🔌 Connecting to database...');
     console.log('🔌 Connecting to PostgreSQL...');
     await initDb();
     app.listen(PORT, () => {
